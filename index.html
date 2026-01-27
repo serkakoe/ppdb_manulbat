@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPDB MA Nurul Ulum Batursari</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; }
+        .hidden-section { display: none !important; }
+        .glass-card { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); }
+        .input-focus { transition: all 0.2s ease; border: 2px solid #e2e8f0; }
+        .input-focus:focus { border-color: #10b981; background: white; transform: translateY(-1px); outline: none; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .btn-gradient { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+        
+        .header-banner { 
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(6, 78, 59, 0.95)), 
+                        url('./banner.jpg'), #064e3b; 
+            background-size: cover;
+            background-position: center;
+            min-height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom-right-radius: 5rem;
+            border-bottom-left-radius: 5rem;
+            position: relative;
+            padding: 2rem;
+        }
+
+        .logo-box {
+            width: 130px; 
+            height: 130px;
+            background: white;
+            border-radius: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+    </style>
+</head>
+<body class="bg-[#f0fdf4] text-slate-800">
+
+    <div id="view-form">
+        <div class="header-banner">
+            <button onclick="showAdminLogin()" class="absolute top-8 right-8 bg-white/10 hover:bg-white/20 backdrop-blur-md px-6 py-2.5 rounded-full text-[10px] font-black tracking-widest text-white uppercase transition-all">
+                Admin Panel
+            </button>
+            
+            <div class="flex flex-col md:flex-row items-center gap-8 text-center md:text-left max-w-5xl w-full">
+                <div class="logo-box">
+                    <img src="./logo.jpg" alt="Logo" onerror="this.src='https://ui-avatars.com/api/?name=MA+NU&background=10b981&color=fff'">
+                </div>
+                <div class="text-white">
+                    <h1 class="text-4xl md:text-6xl font-black uppercase leading-tight">Pendaftaran Siswa Baru</h1>
+                    <p class="text-emerald-300 text-xl font-bold mt-2">MA Nurul Ulum Batursari</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-3xl mx-auto -mt-16 px-6 mb-20">
+            <div class="glass-card rounded-[3rem] shadow-2xl p-8 md:p-12">
+                <form id="ppdbForm" class="space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-emerald-600 ml-2">Tahun Pelajaran</label>
+                            <input type="text" id="tahun_ajaran" value="2026/2027" readonly class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-emerald-600 ml-2">Pilihan Kelas</label>
+                            <select id="kelas_pilihan" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus font-bold">
+                                <option value="">-- Pilih --</option>
+                                <option>Kelas 10</option>
+                                <option>Kelas 11</option>
+                                <option>Kelas 12</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <label class="text-[10px] font-black uppercase text-emerald-600 ml-2">Biodata Calon Siswa</label>
+                        <input type="text" id="nama" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus" placeholder="Nama Lengkap">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="number" id="nik" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus" placeholder="NIK (16 Digit)">
+                            <input type="number" id="nisn" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus" placeholder="NISN">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <select id="jk" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus">
+                                <option value="">Jenis Kelamin</option>
+                                <option>Laki-laki</option>
+                                <option>Perempuan</option>
+                            </select>
+                            <input type="text" id="sekolah_asal" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus" placeholder="Asal Sekolah">
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <label class="text-[10px] font-black uppercase text-emerald-600 ml-2">Kontak Wali</label>
+                        <input type="text" id="nama_ortu" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus" placeholder="Nama Orang Tua">
+                        <input type="number" id="whatsapp" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus" placeholder="No. WA (Contoh: 08123...)">
+                        <textarea id="alamat" required class="w-full p-4 bg-slate-100/50 rounded-2xl input-focus min-h-[100px]" placeholder="Alamat Lengkap"></textarea>
+                    </div>
+
+                    <div class="p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
+                        <label class="text-[10px] font-black uppercase text-emerald-700">Dokumen (Max 2MB)</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3">
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-500 mb-1 uppercase">Kartu Keluarga</p>
+                                <input type="file" id="file_kk" accept="image/*" class="text-xs">
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-500 mb-1 uppercase">Ijazah / SKL</p>
+                                <input type="file" id="file_ijazah" accept="image/*" class="text-xs">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnSubmit" class="w-full btn-gradient text-white font-black py-5 rounded-3xl shadow-xl hover:scale-[1.01] transition-all uppercase tracking-widest text-lg">
+                        Kirim Pendaftaran
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login & Dashboard UI -->
+    <div id="view-login" class="min-h-screen flex items-center justify-center hidden-section bg-slate-900 px-6">
+        <div class="bg-white p-10 rounded-[3rem] w-full max-w-sm text-center">
+            <h2 class="text-xl font-black mb-6 uppercase tracking-widest">Admin Login</h2>
+            <input type="password" id="adminPass" class="w-full p-5 bg-slate-100 rounded-2xl text-center font-black text-2xl mb-4 outline-none" placeholder="••••">
+            <button onclick="handleLogin()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase">Masuk</button>
+            <button onclick="logout()" class="mt-4 text-slate-400 text-[10px] font-black uppercase">Kembali</button>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="min-h-screen hidden-section bg-slate-50">
+        <header class="bg-white p-6 border-b flex justify-between items-center sticky top-0 z-50">
+            <h2 class="font-black text-emerald-800 uppercase tracking-tighter">Database Pendaftar</h2>
+            <div class="flex gap-4">
+                <button onclick="fetchAdminData()" class="text-emerald-600 text-[10px] font-black uppercase">Refresh Data</button>
+                <button onclick="logout()" class="text-red-500 font-bold text-[10px] uppercase">Keluar</button>
+            </div>
+        </header>
+        <main class="p-8 max-w-6xl mx-auto">
+            <div id="dataList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Data akan muncul di sini -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const S_URL = "https://rsuaanubjqlikfsmtmjl.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdWFhbnVianFsaWtmc210bWpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDMwNzksImV4cCI6MjA4NDk3OTA3OX0.bxuYjxk4uhY0Y8MYna2gWWt99jwshW8L7Gke6IQ8RX0"; 
+        const _sb = window.supabase.createClient(S_URL, S_KEY);
+
+        const BUCKET_NAME = 'berkas_ppdb'; 
+
+        async function uploadFile(inputId, nisn, label) {
+            const file = document.getElementById(inputId).files[0];
+            if (!file) return null;
+            
+            const ext = file.name.split('.').pop();
+            const path = `pendaftaran/${nisn}_${label}_${Date.now()}.${ext}`;
+            
+            const { data, error } = await _sb.storage.from(BUCKET_NAME).upload(path, file);
+            if (error) throw new Error(`Gagal Upload ${label}: ${error.message}`);
+            
+            return _sb.storage.from(BUCKET_NAME).getPublicUrl(path).data.publicUrl;
+        }
+
+        document.getElementById('ppdbForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            const nisn = document.getElementById('nisn').value;
+            
+            btn.disabled = true;
+            btn.innerText = "SEDANG MENGIRIM...";
+
+            try {
+                const [urlKk, urlIjz] = await Promise.all([
+                    uploadFile('file_kk', nisn, 'KK'),
+                    uploadFile('file_ijazah', nisn, 'IJZ')
+                ]);
+
+                const { error: dbError } = await _sb.from('pendaftaran').insert([{
+                    nama_lengkap: document.getElementById('nama').value,
+                    nik: document.getElementById('nik').value,
+                    nisn: nisn,
+                    sekolah_asal: document.getElementById('sekolah_asal').value,
+                    jenis_kelamin: document.getElementById('jk').value,
+                    kelas_pilihan: document.getElementById('kelas_pilihan').value,
+                    tahun_ajaran: document.getElementById('tahun_ajaran').value,
+                    nama_ortu: document.getElementById('nama_ortu').value,
+                    whatsapp: document.getElementById('whatsapp').value,
+                    alamat: document.getElementById('alamat').value,
+                    url_kk: urlKk,
+                    url_ijazah: urlIjz
+                }]);
+
+                if (dbError) throw dbError;
+
+                Swal.fire('Berhasil!', 'Data Anda telah tersimpan.', 'success');
+                e.target.reset();
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Gagal!', err.message || 'Cek koneksi atau database.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "KIRIM PENDAFTARAN";
+            }
+        });
+
+        function showAdminLogin() {
+            document.getElementById('view-form').classList.add('hidden-section');
+            document.getElementById('view-login').classList.remove('hidden-section');
+        }
+
+        async function handleLogin() {
+            if (document.getElementById('adminPass').value === 'admin123') {
+                document.getElementById('view-login').classList.add('hidden-section');
+                document.getElementById('view-dashboard').classList.remove('hidden-section');
+                fetchAdminData();
+            } else { Swal.fire('Error', 'PIN Salah', 'error'); }
+        }
+
+        async function fetchAdminData() {
+            const list = document.getElementById('dataList');
+            list.innerHTML = '<div class="col-span-full py-20 text-center text-slate-400 font-bold animate-pulse">MENGAMBIL DATA...</div>';
+            
+            const { data, error } = await _sb.from('pendaftaran').select('*').order('created_at', {ascending: false});
+            
+            if (error) {
+                list.innerHTML = `<div class="col-span-full py-20 text-center text-red-500 font-bold">Error: ${error.message}<br><small>Pastikan Policy SELECT diaktifkan di Supabase</small></div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<div class="col-span-full py-20 text-center text-slate-400 font-bold">BELUM ADA PENDAFTAR</div>';
+                return;
+            }
+
+            renderData(data);
+        }
+
+        function renderData(data) {
+            const list = document.getElementById('dataList');
+            list.innerHTML = data.map(r => `
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:border-emerald-200 transition-all">
+                    <h3 class="font-black text-slate-800 uppercase tracking-tight">${r.nama_lengkap}</h3>
+                    <p class="text-[10px] font-bold text-emerald-600 mb-4">${r.sekolah_asal} - ${r.kelas_pilihan}</p>
+                    <div class="text-[10px] space-y-2 mb-6 text-slate-500">
+                        <div class="flex justify-between"><span>NISN:</span><span class="font-bold text-slate-800">${r.nisn}</span></div>
+                        <div class="flex justify-between"><span>NIK:</span><span class="font-bold text-slate-800">${r.nik}</span></div>
+                        <div class="flex justify-between"><span>WA:</span><a href="https://wa.me/62${r.whatsapp}" target="_blank" class="font-bold text-emerald-600 underline">${r.whatsapp}</a></div>
+                        <div class="pt-2 border-t border-slate-50">
+                            <span class="block mb-1">Alamat:</span>
+                            <span class="font-bold text-slate-800">${r.alamat}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${r.url_kk ? `<a href="${r.url_kk}" target="_blank" class="flex-1 bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 py-3 rounded-2xl text-[9px] font-black text-center transition-colors">LIHAT KK</a>` : ''}
+                        ${r.url_ijazah ? `<a href="${r.url_ijazah}" target="_blank" class="flex-1 bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 py-3 rounded-2xl text-[9px] font-black text-center transition-colors">LIHAT IJZ</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function logout() { location.reload(); }
+    </script>
+</body>
+</html>
