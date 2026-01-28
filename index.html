@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PPDB MANULBAT</title>
     
-    <!-- Tambahkan Favicon di sini -->
     <link rel="icon" type="image/jpeg" href="./favicon.jpg">
-    <!-- Link alternatif jika menggunakan file .ico -->
-    <!-- <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon"> -->
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -54,7 +51,6 @@
 
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
         
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
@@ -281,7 +277,7 @@
                 return;
             }
             list.innerHTML = data.map(r => `
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group">
+                <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group">
                     <button onclick="deleteData(${r.id}, '${r.nama_lengkap}')" class="absolute top-4 right-4 text-red-300 hover:text-red-500 transition-colors p-2">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -317,12 +313,26 @@
             });
 
             if (confirm) {
+                // UI feedback langsung: Sembunyikan kartu sebelum request selesai
+                const card = document.getElementById(`card-${id}`);
+                if(card) card.style.opacity = '0.3';
+
                 const { error } = await _sb.from('pendaftaran').delete().eq('id', id);
+                
                 if (error) {
-                    Swal.fire('Gagal', error.message, 'error');
+                    if(card) card.style.opacity = '1';
+                    Swal.fire('Gagal', 'Pesan error: ' + error.message, 'error');
                 } else {
-                    Swal.fire('Terhapus', 'Data telah dihapus.', 'success');
-                    fetchAdminData();
+                    // Update data global dan render ulang
+                    globalData = globalData.filter(item => item.id !== id);
+                    renderData(globalData);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Terhapus',
+                        text: 'Data telah dihapus dari database.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
                 }
             }
         }
@@ -358,4 +368,3 @@
     </script>
 </body>
 </html>
-
