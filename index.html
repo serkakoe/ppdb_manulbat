@@ -187,6 +187,30 @@
 
         const BUCKET_NAME = 'berkas'; 
         let globalData = [];
+        let realtimeChannel = null;
+
+        // Inisialisasi Realtime Subscription
+        function setupRealtime() {
+            if (realtimeChannel) _sb.removeChannel(realtimeChannel);
+
+            realtimeChannel = _sb.channel('db-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'pendaftaran' }, (payload) => {
+                    // Jika ada data dihapus di database oleh perangkat manapun
+                    if (payload.eventType === 'DELETE') {
+                        globalData = globalData.filter(item => item.id !== payload.old.id);
+                        renderData(globalData);
+                    }
+                    // Jika ada pendaftar baru masuk secara realtime
+                    if (payload.eventType === 'INSERT') {
+                        const filterTahun = document.getElementById('filterTahun').value;
+                        if (filterTahun === "Semua" || payload.new.tahun_ajaran === filterTahun) {
+                            globalData = [payload.new, ...globalData];
+                            renderData(globalData);
+                        }
+                    }
+                })
+                .subscribe();
+        }
 
         async function uploadFile(inputId, nisn, label) {
             const file = document.getElementById(inputId).files[0];
@@ -246,6 +270,7 @@
             if (document.getElementById('adminPass').value === 'admin123') {
                 document.getElementById('view-login').classList.add('hidden-section');
                 document.getElementById('view-dashboard').classList.remove('hidden-section');
+                setupRealtime(); // Aktifkan realtime setelah login
                 fetchAdminData();
             } else { Swal.fire('Error', 'PIN Salah!', 'error'); }
         }
@@ -277,7 +302,7 @@
                 return;
             }
             list.innerHTML = data.map(r => `
-                <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group">
+                <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group animate-in fade-in duration-500">
                     <button onclick="deleteData(${r.id}, '${r.nama_lengkap}')" class="absolute top-4 right-4 text-red-300 hover:text-red-500 transition-colors p-2">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -313,7 +338,6 @@
             });
 
             if (confirm) {
-                // UI feedback langsung: Sembunyikan kartu sebelum request selesai
                 const card = document.getElementById(`card-${id}`);
                 if(card) card.style.opacity = '0.3';
 
@@ -323,7 +347,8 @@
                     if(card) card.style.opacity = '1';
                     Swal.fire('Gagal', 'Pesan error: ' + error.message, 'error');
                 } else {
-                    // Update data global dan render ulang
+                    // Berhasil dihapus, payload realtime akan otomatis menghilangkannya dari browser lain.
+                    // Di sini kita filter lokal agar instan.
                     globalData = globalData.filter(item => item.id !== id);
                     renderData(globalData);
                     Swal.fire({
