@@ -189,23 +189,24 @@
         let globalData = [];
         let realtimeChannel = null;
 
-        // Inisialisasi Realtime Subscription
         function setupRealtime() {
             if (realtimeChannel) _sb.removeChannel(realtimeChannel);
 
             realtimeChannel = _sb.channel('db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'pendaftaran' }, (payload) => {
-                    // Jika ada data dihapus di database oleh perangkat manapun
+                    console.log("Realtime event received:", payload);
                     if (payload.eventType === 'DELETE') {
                         globalData = globalData.filter(item => item.id !== payload.old.id);
                         renderData(globalData);
                     }
-                    // Jika ada pendaftar baru masuk secara realtime
                     if (payload.eventType === 'INSERT') {
                         const filterTahun = document.getElementById('filterTahun').value;
                         if (filterTahun === "Semua" || payload.new.tahun_ajaran === filterTahun) {
-                            globalData = [payload.new, ...globalData];
-                            renderData(globalData);
+                            // Cek jika data sudah ada untuk mencegah duplikasi di UI
+                            if (!globalData.find(d => d.id === payload.new.id)) {
+                                globalData = [payload.new, ...globalData];
+                                renderData(globalData);
+                            }
                         }
                     }
                 })
@@ -270,7 +271,7 @@
             if (document.getElementById('adminPass').value === 'admin123') {
                 document.getElementById('view-login').classList.add('hidden-section');
                 document.getElementById('view-dashboard').classList.remove('hidden-section');
-                setupRealtime(); // Aktifkan realtime setelah login
+                setupRealtime();
                 fetchAdminData();
             } else { Swal.fire('Error', 'PIN Salah!', 'error'); }
         }
@@ -297,7 +298,7 @@
 
         function renderData(data) {
             const list = document.getElementById('dataList');
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400">Tidak ada data pendaftar.</div>';
                 return;
             }
@@ -341,20 +342,21 @@
                 const card = document.getElementById(`card-${id}`);
                 if(card) card.style.opacity = '0.3';
 
+                // EKSEKUSI PENGHAPUSAN DI DATABASE
                 const { error } = await _sb.from('pendaftaran').delete().eq('id', id);
                 
                 if (error) {
                     if(card) card.style.opacity = '1';
-                    Swal.fire('Gagal', 'Pesan error: ' + error.message, 'error');
+                    console.error("Delete error:", error);
+                    Swal.fire('Gagal Menghapus', 'Database menolak penghapusan. Cek Policy Supabase (DELETE) Anda.', 'error');
                 } else {
-                    // Berhasil dihapus, payload realtime akan otomatis menghilangkannya dari browser lain.
-                    // Di sini kita filter lokal agar instan.
+                    // Update data lokal HANYA jika server merespons sukses
                     globalData = globalData.filter(item => item.id !== id);
                     renderData(globalData);
                     Swal.fire({
                         icon: 'success',
-                        title: 'Terhapus',
-                        text: 'Data telah dihapus dari database.',
+                        title: 'Terhapus!',
+                        text: 'Data telah dihapus dari server secara permanen.',
                         timer: 1500,
                         showConfirmButton: false
                     });
