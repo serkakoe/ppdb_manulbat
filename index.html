@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PPDB MA Nurul Ulum </title>
+    <title>PPDB MANULBAT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Library untuk Export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <style>
@@ -48,6 +47,11 @@
         }
 
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-[#f0fdf4] text-slate-800">
@@ -64,7 +68,7 @@
                 </div>
                 <div class="text-white">
                     <h1 class="text-3xl md:text-5xl font-black uppercase leading-tight">PPDB Siswa Baru</h1>
-                    <p class="text-emerald-300 text-lg font-bold">MADRASAH ALIYAH  NURUL ULUM</p>
+                    <p class="text-emerald-300 text-lg font-bold">MA Nurul Ulum Batursari</p>
                 </div>
             </div>
         </div>
@@ -75,7 +79,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="text-[10px] font-black uppercase text-emerald-600 ml-1">Tahun Ajaran</label>
-                            <input type="text" id="tahun_ajaran" value="2026/2027" readonly class="w-full p-3.5 bg-slate-50 rounded-xl font-bold">
+                            <select id="tahun_ajaran" class="w-full p-3.5 bg-slate-50 rounded-xl font-bold input-focus">
+                                <option value="2026/2027">2026/2027</option>
+                                <option value="2027/2028">2027/2028</option>
+                            </select>
                         </div>
                         <div>
                             <label class="text-[10px] font-black uppercase text-emerald-600 ml-1">Pilihan Kelas</label>
@@ -145,11 +152,18 @@
     </div>
 
     <div id="view-dashboard" class="min-h-screen hidden-section bg-slate-50">
-        <header class="bg-white p-4 border-b flex flex-wrap justify-between items-center sticky top-0 z-50 px-4 md:px-8 gap-4">
-            <h2 class="font-black text-emerald-800 uppercase text-xs">Database Pendaftar</h2>
-            <div class="flex gap-3 overflow-x-auto">
+        <header class="bg-white p-4 border-b flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 px-4 md:px-8 gap-4">
+            <div class="flex items-center gap-4">
+                <h2 class="font-black text-emerald-800 uppercase text-xs">Database</h2>
+                <select id="filterTahun" onchange="fetchAdminData()" class="bg-slate-100 border-none rounded-lg text-[10px] font-bold px-3 py-1.5 outline-none">
+                    <option value="Semua">Semua Tahun</option>
+                    <option value="2026/2027">2026/2027</option>
+                    <option value="2027/2028">2027/2028</option>
+                </select>
+            </div>
+            <div class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
                 <button onclick="downloadExcel()" class="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-[9px] font-black uppercase flex items-center whitespace-nowrap">
-                    <i class="fa-solid fa-file-excel mr-1.5"></i> Download Excel
+                    <i class="fa-solid fa-file-excel mr-1.5"></i> Excel
                 </button>
                 <button onclick="fetchAdminData()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-[9px] font-black uppercase flex items-center whitespace-nowrap">
                     <i class="fa-solid fa-rotate mr-1.5"></i> Refresh
@@ -165,24 +179,20 @@
     </div>
 
     <script>
-        // KONTROL SUPABASE
         const S_URL = "https://rsuaanubjqlikfsmtmjl.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdWFhbnVianFsaWtmc210bWpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDMwNzksImV4cCI6MjA4NDk3OTA3OX0.bxuYjxk4uhY0Y8MYna2gWWt99jwshW8L7Gke6IQ8RX0"; 
         const _sb = window.supabase.createClient(S_URL, S_KEY);
 
         const BUCKET_NAME = 'berkas'; 
-        let globalData = []; // Menyimpan data untuk diekspor
+        let globalData = [];
 
         async function uploadFile(inputId, nisn, label) {
             const file = document.getElementById(inputId).files[0];
             if (!file) return null;
-            
             const ext = file.name.split('.').pop();
             const path = `ppdb_2026/${nisn}_${label}_${Date.now()}.${ext}`;
-            
             const { data, error } = await _sb.storage.from(BUCKET_NAME).upload(path, file);
             if (error) throw new Error(`Gagal Upload Berkas: ${error.message}`);
-            
             return _sb.storage.from(BUCKET_NAME).getPublicUrl(path).data.publicUrl;
         }
 
@@ -190,7 +200,6 @@
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
             const nisn = document.getElementById('nisn').value;
-            
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin mr-2"></i> MENGIRIM...';
 
@@ -216,22 +225,10 @@
                 }]);
 
                 if (dbError) throw dbError;
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil Terkirim!',
-                    text: 'Data pendaftaran telah masuk ke database kami.',
-                    confirmButtonColor: '#10b981'
-                });
+                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Data pendaftaran tersimpan.', confirmButtonColor: '#10b981' });
                 e.target.reset();
             } catch (err) {
-                console.error(err);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal Mengirim',
-                    text: 'Pastikan koneksi stabil dan tabel database sudah siap.',
-                    confirmButtonColor: '#ef4444'
-                });
+                Swal.fire({ icon: 'error', title: 'Gagal', text: err.message, confirmButtonColor: '#ef4444' });
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> KIRIM PENDAFTARAN';
@@ -253,9 +250,16 @@
 
         async function fetchAdminData() {
             const list = document.getElementById('dataList');
+            const filterTahun = document.getElementById('filterTahun').value;
             list.innerHTML = '<div class="col-span-full py-10 text-center font-bold text-slate-300">LOADING DATA...</div>';
             
-            const { data, error } = await _sb.from('pendaftaran').select('*').order('created_at', {ascending: false});
+            let query = _sb.from('pendaftaran').select('*').order('created_at', {ascending: false});
+            
+            if (filterTahun !== "Semua") {
+                query = query.eq('tahun_ajaran', filterTahun);
+            }
+
+            const { data, error } = await query;
             if (error) {
                 list.innerHTML = `<div class="col-span-full py-10 text-center text-red-400">Error: ${error.message}</div>`;
                 return;
@@ -267,27 +271,54 @@
         function renderData(data) {
             const list = document.getElementById('dataList');
             if (data.length === 0) {
-                list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400">Belum ada pendaftar.</div>';
+                list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400">Tidak ada data pendaftar.</div>';
                 return;
             }
             list.innerHTML = data.map(r => `
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <h3 class="font-black text-slate-800 uppercase leading-none">${r.nama_lengkap}</h3>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group">
+                    <button onclick="deleteData(${r.id}, '${r.nama_lengkap}')" class="absolute top-4 right-4 text-red-300 hover:text-red-500 transition-colors p-2">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    <h3 class="font-black text-slate-800 uppercase leading-none pr-8">${r.nama_lengkap}</h3>
                     <p class="text-[9px] font-bold text-emerald-600 mt-1 uppercase">${r.sekolah_asal} • ${r.kelas_pilihan}</p>
                     <div class="mt-4 space-y-2 text-[10px] text-slate-500 border-t pt-4">
+                        <div class="flex justify-between"><span>Tahun Ajaran:</span><span class="font-bold text-slate-700">${r.tahun_ajaran}</span></div>
                         <div class="flex justify-between"><span>NISN:</span><span class="font-bold text-slate-700">${r.nisn}</span></div>
                         <div class="flex justify-between"><span>WA Wali:</span><a href="https://wa.me/62${r.whatsapp}" target="_blank" class="font-bold text-emerald-600">${r.whatsapp}</a></div>
                         <div class="pt-2">
                             <span class="block opacity-60">Alamat:</span>
-                            <span class="font-medium text-slate-700">${r.alamat}</span>
+                            <span class="font-medium text-slate-700 line-clamp-2">${r.alamat}</span>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-6">
-                        ${r.url_kk ? `<a href="${r.url_kk}" target="_blank" class="bg-slate-100 py-2.5 rounded-xl text-[8px] font-black text-center text-slate-600">LIHAT KK</a>` : ''}
-                        ${r.url_ijazah ? `<a href="${r.url_ijazah}" target="_blank" class="bg-slate-100 py-2.5 rounded-xl text-[8px] font-black text-center text-slate-600">LIHAT IJZ</a>` : ''}
+                        ${r.url_kk ? `<a href="${r.url_kk}" target="_blank" class="bg-slate-50 hover:bg-emerald-50 py-2.5 rounded-xl text-[8px] font-black text-center text-slate-600 transition-colors">LIHAT KK</a>` : ''}
+                        ${r.url_ijazah ? `<a href="${r.url_ijazah}" target="_blank" class="bg-slate-50 hover:bg-emerald-50 py-2.5 rounded-xl text-[8px] font-black text-center text-slate-600 transition-colors">LIHAT IJZ</a>` : ''}
                     </div>
                 </div>
             `).join('');
+        }
+
+        async function deleteData(id, nama) {
+            const { value: confirm } = await Swal.fire({
+                title: 'Hapus Pendaftar?',
+                text: `Anda akan menghapus data ${nama} secara permanen.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            });
+
+            if (confirm) {
+                const { error } = await _sb.from('pendaftaran').delete().eq('id', id);
+                if (error) {
+                    Swal.fire('Gagal', error.message, 'error');
+                } else {
+                    Swal.fire('Terhapus', 'Data telah dihapus.', 'success');
+                    fetchAdminData();
+                }
+            }
         }
 
         function downloadExcel() {
@@ -295,10 +326,9 @@
                 Swal.fire('Info', 'Tidak ada data untuk didownload.', 'info');
                 return;
             }
-
-            // Bersihkan data untuk Excel
             const excelData = globalData.map((r, index) => ({
                 'No': index + 1,
+                'Tahun Ajaran': r.tahun_ajaran,
                 'Tanggal Daftar': new Date(r.created_at).toLocaleString('id-ID'),
                 'Nama Lengkap': r.nama_lengkap,
                 'NIK': r.nik,
@@ -312,18 +342,13 @@
                 'Link KK': r.url_kk || '-',
                 'Link Ijazah': r.url_ijazah || '-'
             }));
-
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Pendaftar");
-            
-            // Simpan file
-            XLSX.writeFile(workbook, `PPDB_NurulUlum_2026_${Date.now()}.xlsx`);
+            XLSX.writeFile(workbook, `Rekap_PPDB_${document.getElementById('filterTahun').value}_${Date.now()}.xlsx`);
         }
 
         function logout() { location.reload(); }
     </script>
 </body>
 </html>
-
-
